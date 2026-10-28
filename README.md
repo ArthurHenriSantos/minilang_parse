@@ -10,7 +10,7 @@
 * `Aryane Caroline da Silva de Souza` RA : 2013047
 * `Sofia Pereira Deniz` RA : 2010932
 * `Jeniffer Scarpini Quintan` RA : 1993338
-* 
+  
 ## Sobre o Projeto
 
 Este projeto implementa a segunda fase de um compilador (Análise Sintática) para a linguagem fictícia MiniLang. Ele consome a lista de tokens gerada pelo Lexer e constrói uma Árvore Sintática Abstrata (AST) que representa a hierarquia e a ordem matemática das operações.
