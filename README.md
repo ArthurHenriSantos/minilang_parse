@@ -1,1 +1,12 @@
-# minilang_parse
+# Analisador Sintático (Parser) - MiniLang
+
+## Integrantes
+
+* `Arthur Henrique dos Santos` RA : 2018881
+* `Lucas Gabriel dos Santos Silva` RA : 1996558
+* `Victor Micheletti Gaspareto` RA : 2018051
+* `Rafel Costa Honorio` RA : 2018872
+* `José Monteiro Guedes Neto` RA : 1994079
+* `Aryane Caroline da Silva de Souza` RA : 2013047
+* `Sofia Pereira Deniz` RA : 2010932
+* `Jeniffer Scarpini Quintan` RA : 1993338
