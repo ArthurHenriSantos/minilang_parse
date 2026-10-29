@@ -24,3 +24,24 @@ class Parser:
     def advance(self):
         if not self.at_end(): self.current += 1
         return self.previous()
+
+    def check(self, tipo):
+        if self.at_end() and tipo != TokenType.EOF: return False
+        return self.peek().type == tipo
+
+    def match(self, *tipos):
+        for tipo in tipos:
+            if self.check(tipo):
+                self.advance()
+                return True
+        return False
+
+    def expect(self, tipo_esperado, mensagem):
+        if self.check(tipo_esperado): return self.advance()
+        raise ParseError(self.peek(), mensagem)
+
+    def parse(self):
+        try:
+            return self.programa()
+        except ParseError as erro:
+            return erro
