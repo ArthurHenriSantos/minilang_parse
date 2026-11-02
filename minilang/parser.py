@@ -2,18 +2,18 @@ from minilang.lexer import TokenType
 from minilang.ast import Programa, Declaracao, Atribuicao, Saida, Binaria, Inteiro, Variavel
 
 class ParseError(Exception):
-    def _init_(self, token, mensagem):
+    def __init__(self, token, mensagem):
         self.token = token
         self.mensagem = mensagem
-        super()._init_(self.mensagem)
+        super().__init__(self.mensagem)
 
-    def _str_(self):
+    def __str__(self):
         if self.token.type == TokenType.EOF:
             return f"Erro Sintático: {self.mensagem}"
         return f"Erro Sintático [Linha {self.token.line}, Col {self.token.column}]: Encontrado '{self.token.lexeme}'. {self.mensagem}"
 
 class Parser:
-    def _init_(self, tokens):
+    def __init__(self, tokens):
         self.tokens = tokens
         self.current = 0
 
