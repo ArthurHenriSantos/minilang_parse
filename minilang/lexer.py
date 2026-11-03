@@ -4,6 +4,10 @@ from dataclasses import dataclass
 class TokenType(Enum):
     KW_INT = "KW_INT"
     KW_PRINT = "KW_PRINT"
+    KW_IF = "KW_IF"
+    KW_ELSE = "KW_ELSE"
+    KW_WHILE = "KW_WHILE"
+    KW_FOR = "KW_FOR"
     IDENT = "IDENT"
     INT_LITERAL = "INT_LITERAL"
     ASSIGN = "ASSIGN"
@@ -11,9 +15,17 @@ class TokenType(Enum):
     MINUS = "MINUS"
     STAR = "STAR"
     SLASH = "SLASH"
+    EQUAL_EQUAL = "EQUAL_EQUAL"
+    BANG_EQUAL = "BANG_EQUAL"
+    LESS = "LESS"
+    LESS_EQUAL = "LESS_EQUAL"
+    GREATER = "GREATER"
+    GREATER_EQUAL = "GREATER_EQUAL"
     LPAREN = "LPAREN"
     RPAREN = "RPAREN"
     SEMICOLON = "SEMICOLON"
+    LBRACE = "LBRACE"
+    RBRACE = "RBRACE"
     EOF = "EOF"
 
 @dataclass
@@ -34,7 +46,11 @@ LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 
 KEYWORDS = {
     "int": TokenType.KW_INT,
-    "print": TokenType.KW_PRINT
+    "print": TokenType.KW_PRINT,
+    "if": TokenType.KW_IF,
+    "else": TokenType.KW_ELSE,
+    "while": TokenType.KW_WHILE,
+    "for": TokenType.KW_FOR
 }
 
 class Lexer:
@@ -69,6 +85,13 @@ class Lexer:
         if self.current + 1 >= len(self.source): return "\0"
         return self.source[self.current + 1]
 
+    def match(self, expected):
+        if self.at_end(): return False
+        if self.source[self.current] != expected: return False
+        self.current += 1
+        self.column += 1
+        return True
+
     def add_token(self, start, type):
         lexeme = self.source[start:self.current]
         self.tokens.append(Token(type, lexeme, self.start_line, self.start_column))
@@ -95,13 +118,23 @@ class Lexer:
             elif c in DIGITS:
                 while self.peek() in DIGITS: self.advance()
                 self.add_token(start, TokenType.INT_LITERAL)
-            elif c == '=': self.add_token(start, TokenType.ASSIGN)
+            elif c == '=':
+                self.add_token(start, TokenType.EQUAL_EQUAL if self.match('=') else TokenType.ASSIGN)
+            elif c == '!':
+                if self.match('='): self.add_token(start, TokenType.BANG_EQUAL)
+                else: self.diagnostics.append(Diagnostic(self.start_line, self.start_column, f"Símbolo inválido '{c}'"))
+            elif c == '<':
+                self.add_token(start, TokenType.LESS_EQUAL if self.match('=') else TokenType.LESS)
+            elif c == '>':
+                self.add_token(start, TokenType.GREATER_EQUAL if self.match('=') else TokenType.GREATER)
             elif c == '+': self.add_token(start, TokenType.PLUS)
             elif c == '-': self.add_token(start, TokenType.MINUS)
             elif c == '*': self.add_token(start, TokenType.STAR)
             elif c == '/': self.add_token(start, TokenType.SLASH)
             elif c == '(': self.add_token(start, TokenType.LPAREN)
             elif c == ')': self.add_token(start, TokenType.RPAREN)
+            elif c == '{': self.add_token(start, TokenType.LBRACE)
+            elif c == '}': self.add_token(start, TokenType.RBRACE)
             elif c == ';': self.add_token(start, TokenType.SEMICOLON)
             else:
                 self.diagnostics.append(Diagnostic(self.start_line, self.start_column, f"Símbolo inválido '{c}'"))

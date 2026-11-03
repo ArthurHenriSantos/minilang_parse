@@ -18,16 +18,20 @@ def main():
     lexer = Lexer(codigo)
     tokens, erros = lexer.scan_tokens()
     if erros:
-        return print(f"Erro Léxico: {erros[0].message} na linha {erros[0].line}")
+        print("=== ERROS LÉXICOS ===")
+        for erro in erros:
+            print(f"Linha {erro.line}, Col {erro.column}: {erro.message}")
+        return
 
     parser = Parser(tokens)
     resultado = parser.parse()
 
     if isinstance(resultado, Exception):
+        print("\n=== ERRO SINTÁTICO ===")
         print(resultado)
     else:
+        print("\n=== AST GERADA COM SUCESSO ===")
         imprimir_ast(resultado)
 
 if __name__ == "__main__":
     main()
-
