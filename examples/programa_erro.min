@@ -1,0 +1,17 @@
+int valor;
+valor = 10;
+
+if (valor < 20) {
+    print(valor);
+} else {
+    print(0);
+};
+
+while (valor > 0) {
+    valor = valor - 1;
+}
+
+int i;
+for (i = 0; i < 5; i = i + 1) {
+    print(i);
+}
