@@ -3,6 +3,9 @@ from dataclasses import dataclass
 
 class TokenType(Enum):
     KW_INT = "KW_INT"
+    KW_BOOL = "KW_BOOL"
+    KW_TRUE = "KW_TRUE"
+    KW_FALSE = "KW_FALSE"
     KW_PRINT = "KW_PRINT"
     KW_IF = "KW_IF"
     KW_ELSE = "KW_ELSE"
@@ -46,6 +49,9 @@ LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 
 KEYWORDS = {
     "int": TokenType.KW_INT,
+    "bool": TokenType.KW_BOOL,
+    "true": TokenType.KW_TRUE,
+    "false": TokenType.KW_FALSE,
     "print": TokenType.KW_PRINT,
     "if": TokenType.KW_IF,
     "else": TokenType.KW_ELSE,

@@ -1,5 +1,8 @@
 from minilang.lexer import TokenType
-from minilang.ast import Programa, Declaracao, Atribuicao, Saida, Binaria, Inteiro, Variavel, Bloco, Condicao, Se, Enquanto, Para
+from minilang.ast import (
+    Programa, Declaracao, Atribuicao, Saida, Binaria,
+    Inteiro, Booleano, Variavel, Bloco, Se, Enquanto, Para
+)
 
 class ParseError(Exception):
     def __init__(self, token, mensagem):
@@ -20,7 +23,7 @@ class Parser:
     def peek(self): return self.tokens[self.current]
     def previous(self): return self.tokens[self.current - 1]
     def at_end(self): return self.peek().type == TokenType.EOF
-    
+
     def advance(self):
         if not self.at_end(): self.current += 1
         return self.previous()
@@ -58,7 +61,7 @@ class Parser:
         return comandos
 
     def item(self):
-        if self.match(TokenType.KW_INT): return self.declaracao()
+        if self.match(TokenType.KW_INT, TokenType.KW_BOOL): return self.declaracao()
         if self.match(TokenType.KW_PRINT): return self.saida()
         if self.match(TokenType.KW_IF): return self.se()
         if self.match(TokenType.KW_WHILE): return self.enquanto()
@@ -67,103 +70,126 @@ class Parser:
         return self.atribuicao()
 
     def bloco(self):
+        chave = self.previous()
         comandos = []
         while not self.at_end() and not self.check(TokenType.RBRACE):
             comandos.append(self.item())
         self.expect(TokenType.RBRACE, "Esperado '}' fechando o bloco.")
-        return Bloco(comandos)
-
-    def condicao(self):
-        esq = self.expressao()
-        if self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL):
-            op = self.previous().lexeme
-            dir = self.expressao()
-            return Condicao(op, esq, dir)
-        raise ParseError(self.peek(), "Esperado operador relacional na condição (ex: <, >, ==).")
+        return Bloco(comandos, chave.line, chave.column)
 
     def se(self):
+        kw = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'if'.")
-        cond = self.condicao()
+        cond = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a condição.")
         self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'if'.")
         bloco_if = self.bloco()
-        
+
         bloco_else = None
         if self.match(TokenType.KW_ELSE):
             self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'else'.")
             bloco_else = self.bloco()
-            
-        return Se(cond, bloco_if, bloco_else)
+
+        return Se(cond, bloco_if, bloco_else, kw.line, kw.column)
 
     def enquanto(self):
+        kw = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'while'.")
-        cond = self.condicao()
+        cond = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a condição.")
         self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'while'.")
         bloco = self.bloco()
-        return Enquanto(cond, bloco)
+        return Enquanto(cond, bloco, kw.line, kw.column)
 
     def para(self):
+        kw = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'for'.")
-        
         inicializacao = self.atribuicao()
-        
-        condicao = self.condicao()
+        condicao = self.expressao()
         self.expect(TokenType.SEMICOLON, "Esperado ';' após a condição do 'for'.")
-        
-        nome_inc = self.expect(TokenType.IDENT, "Esperado nome de variável no incremento do 'for'.").lexeme
+
+        tok_inc = self.expect(TokenType.IDENT, "Esperado nome de variável no incremento do 'for'.")
         self.expect(TokenType.ASSIGN, "Esperado '=' no incremento do 'for'.")
         expr_inc = self.expressao()
-        incremento = Atribuicao(nome_inc, expr_inc)
-        
+        incremento = Atribuicao(tok_inc.lexeme, expr_inc, tok_inc.line, tok_inc.column)
+
         self.expect(TokenType.RPAREN, "Esperado ')' fechando o 'for'.")
         self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'for'.")
         bloco_for = self.bloco()
-        
-        return Para(inicializacao, condicao, incremento, bloco_for)
+
+        return Para(inicializacao, condicao, incremento, bloco_for, kw.line, kw.column)
 
     def declaracao(self):
-        nome = self.expect(TokenType.IDENT, "Esperado nome da variável após 'int'.").lexeme
+        tipo_tok = self.previous()
+        nome_tok = self.expect(TokenType.IDENT, f"Esperado nome da variável após '{tipo_tok.lexeme}'.")
         self.expect(TokenType.SEMICOLON, "Esperado ';' após declaração.")
-        return Declaracao(nome)
+        return Declaracao(tipo_tok.lexeme, nome_tok.lexeme, nome_tok.line, nome_tok.column)
 
     def saida(self):
+        kw = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'print'.")
         expr = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a expressão.")
         self.expect(TokenType.SEMICOLON, "Esperado ';' no final do comando print.")
-        return Saida(expr)
+        return Saida(expr, kw.line, kw.column)
 
     def atribuicao(self):
-        nome = self.expect(TokenType.IDENT, "Comando inválido ou esperado nome de variável.").lexeme
+        nome_tok = self.expect(TokenType.IDENT, "Comando inválido ou esperado nome de variável.")
         self.expect(TokenType.ASSIGN, "Esperado '=' na atribuição.")
         expr = self.expressao()
         self.expect(TokenType.SEMICOLON, "Esperado ';' após atribuição.")
-        return Atribuicao(nome, expr)
+        return Atribuicao(nome_tok.lexeme, expr, nome_tok.line, nome_tok.column)
 
     def expressao(self):
+        return self.igualdade()
+
+    def igualdade(self):
+        expr = self.comparacao()
+        while self.match(TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL):
+            op = self.previous()
+            direita = self.comparacao()
+            expr = Binaria(op.lexeme, expr, direita, op.line, op.column)
+        return expr
+
+    def comparacao(self):
+        expr = self.soma()
+        while self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL):
+            op = self.previous()
+            direita = self.soma()
+            expr = Binaria(op.lexeme, expr, direita, op.line, op.column)
+        return expr
+
+    def soma(self):
         expr = self.termo()
         while self.match(TokenType.PLUS, TokenType.MINUS):
-            operador = self.previous().lexeme
+            op = self.previous()
             direita = self.termo()
-            expr = Binaria(operador, expr, direita)
+            expr = Binaria(op.lexeme, expr, direita, op.line, op.column)
         return expr
 
     def termo(self):
         expr = self.fator()
         while self.match(TokenType.STAR, TokenType.SLASH):
-            operador = self.previous().lexeme
+            op = self.previous()
             direita = self.fator()
-            expr = Binaria(operador, expr, direita)
+            expr = Binaria(op.lexeme, expr, direita, op.line, op.column)
         return expr
 
     def fator(self):
         if self.match(TokenType.INT_LITERAL):
-            return Inteiro(int(self.previous().lexeme))
+            tok = self.previous()
+            return Inteiro(int(tok.lexeme), tok.line, tok.column)
+        if self.match(TokenType.KW_TRUE):
+            tok = self.previous()
+            return Booleano(True, tok.line, tok.column)
+        if self.match(TokenType.KW_FALSE):
+            tok = self.previous()
+            return Booleano(False, tok.line, tok.column)
         if self.match(TokenType.IDENT):
-            return Variavel(self.previous().lexeme)
+            tok = self.previous()
+            return Variavel(tok.lexeme, tok.line, tok.column)
         if self.match(TokenType.LPAREN):
             expr = self.expressao()
             self.expect(TokenType.RPAREN, "Esperado ')' fechando a expressão.")
             return expr
-        raise ParseError(self.peek(), "Expressão inválida. Esperado número, variável ou '('.")
+        raise ParseError(self.peek(), "Expressão inválida. Esperado número, booleano, variável ou '('.")

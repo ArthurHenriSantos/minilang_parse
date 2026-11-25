@@ -2,6 +2,7 @@ import sys, os
 from minilang.lexer import Lexer
 from minilang.parser import Parser
 from minilang.ast import imprimir_ast
+from minilang.semantic import AnalisadorSemantico
 
 def main():
     if len(sys.argv) < 2:
@@ -29,9 +30,23 @@ def main():
     if isinstance(resultado, Exception):
         print("\n=== ERRO SINTÁTICO ===")
         print(resultado)
+        return
+
+    semantico = AnalisadorSemantico()
+    semantico.analisar(resultado)
+
+    print("\n=== TABELAS DE SÍMBOLOS POR ESCOPO ===")
+    semantico.imprimir_tabelas_simbolos()
+
+    print("\n=== AST ANOTADA ===")
+    imprimir_ast(resultado)
+
+    print("\n=== DIAGNÓSTICOS SEMÂNTICOS ===")
+    if not semantico.diagnosticos:
+        print("Nenhum erro semântico encontrado.")
     else:
-        print("\n=== AST GERADA COM SUCESSO ===")
-        imprimir_ast(resultado)
+        for d in semantico.diagnosticos:
+            print(f"[Linha {d.line}, Col {d.column}] {d.message}")
 
 if __name__ == "__main__":
     main()
