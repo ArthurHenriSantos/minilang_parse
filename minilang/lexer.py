@@ -3,11 +3,14 @@ from dataclasses import dataclass
 
 class TokenType(Enum):
     KW_INT = "KW_INT"
+    KW_BOOL = "KW_BOOL"
     KW_PRINT = "KW_PRINT"
     KW_IF = "KW_IF"
     KW_ELSE = "KW_ELSE"
     KW_WHILE = "KW_WHILE"
-    KW_FOR = "KW_FOR"
+    BOOL_LITERAL = "BOOL_LITERAL"
+    AND = "AND"
+    OR = "OR"
     IDENT = "IDENT"
     INT_LITERAL = "INT_LITERAL"
     ASSIGN = "ASSIGN"
@@ -46,11 +49,15 @@ LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 
 KEYWORDS = {
     "int": TokenType.KW_INT,
+    "bool": TokenType.KW_BOOL,
     "print": TokenType.KW_PRINT,
     "if": TokenType.KW_IF,
     "else": TokenType.KW_ELSE,
     "while": TokenType.KW_WHILE,
-    "for": TokenType.KW_FOR
+    "true": TokenType.BOOL_LITERAL,
+    "false": TokenType.BOOL_LITERAL,
+    "AND": TokenType.AND,
+    "OR": TokenType.OR
 }
 
 class Lexer:
