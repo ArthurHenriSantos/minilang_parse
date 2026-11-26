@@ -2,36 +2,51 @@ import sys, os
 from minilang.lexer import Lexer
 from minilang.parser import Parser
 from minilang.ast import imprimir_ast
+from minilang.semantic import AnalisadorSemantico
 
 def main():
     if len(sys.argv) < 2:
         print("Uso: python main.py <arquivo.min>")
         return
 
-    caminho = sys.argv[1]
-    if not os.path.exists(caminho):
-        return print(f"Erro: arquivo '{caminho}' não encontrado.")
+    arq = sys.argv[1]
+    if not os.path.exists(arq):
+        return print(f"Arquivo '{arq}' não encontrado.")
 
-    with open(caminho, 'r', encoding='utf-8') as f:
+    with open(arq, 'r', encoding='utf-8') as f:
         codigo = f.read()
 
     lexer = Lexer(codigo)
-    tokens, erros = lexer.scan_tokens()
-    if erros:
-        print("=== ERROS LÉXICOS ===")
-        for erro in erros:
-            print(f"Linha {erro.line}, Col {erro.column}: {erro.message}")
+    tokens, erros_lex = lexer.scan_tokens()
+    if erros_lex:
+        print("Erros léxicos encontrados:")
+        for e in erros_lex:
+            print(f"  L{e.line}:C{e.column} -> {e.message}")
         return
 
     parser = Parser(tokens)
-    resultado = parser.parse()
+    res = parser.parse()
 
-    if isinstance(resultado, Exception):
-        print("\n=== ERRO SINTÁTICO ===")
-        print(resultado)
+    if isinstance(res, Exception):
+        print("\nErro sintático:")
+        print(res)
+        return
+
+    print("\n--- AST Anotada ---")
+    imprimir_ast(res)
+
+    sem = AnalisadorSemantico()
+    sem.analisar(res)
+
+    print("\n--- Tabelas de Símbolos ---")
+    sem.imprimir_tabelas_simbolos()
+
+    print("\n--- Diagnósticos Semânticos ---")
+    if len(sem.diagnosticos) == 0:
+        print("Nenhum erro semântico.")
     else:
-        print("\n=== AST GERADA COM SUCESSO ===")
-        imprimir_ast(resultado)
+        for d in sem.diagnosticos:
+            print(f"[Linha {d.line}, Col {d.column}] {d.message}")
 
 if __name__ == "__main__":
     main()
