@@ -1,5 +1,5 @@
 from minilang.lexer import TokenType
-from minilang.ast import Programa, Declaracao, Atribuicao, Saida, Binaria, Inteiro, Variavel, Bloco, Condicao, Se, Enquanto, Para
+from minilang.ast import Programa, Declaracao, Atribuicao, Saida, Binaria, Inteiro, Booleano, Variavel, Bloco, Se, Enquanto, Para
 
 class ParseError(Exception):
     def __init__(self, token, mensagem):
@@ -58,7 +58,7 @@ class Parser:
         return comandos
 
     def item(self):
-        if self.match(TokenType.KW_INT): return self.declaracao()
+        if self.match(TokenType.KW_INT, TokenType.KW_BOOL): return self.declaracao()
         if self.match(TokenType.KW_PRINT): return self.saida()
         if self.match(TokenType.KW_IF): return self.se()
         if self.match(TokenType.KW_WHILE): return self.enquanto()
@@ -67,103 +67,127 @@ class Parser:
         return self.atribuicao()
 
     def bloco(self):
+        inicio = self.previous()
         comandos = []
         while not self.at_end() and not self.check(TokenType.RBRACE):
             comandos.append(self.item())
         self.expect(TokenType.RBRACE, "Esperado '}' fechando o bloco.")
-        return Bloco(comandos)
-
-    def condicao(self):
-        esq = self.expressao()
-        if self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL):
-            op = self.previous().lexeme
-            dir = self.expressao()
-            return Condicao(op, esq, dir)
-        raise ParseError(self.peek(), "Esperado operador relacional na condição (ex: <, >, ==).")
+        return Bloco(comandos, inicio.line, inicio.column)
 
     def se(self):
+        t_if = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'if'.")
-        cond = self.condicao()
+        cond = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a condição.")
-        self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'if'.")
+        self.expect(TokenType.LBRACE, "Esperado '{' para abrir o bloco do 'if'.")
         bloco_if = self.bloco()
         
         bloco_else = None
         if self.match(TokenType.KW_ELSE):
-            self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'else'.")
+            self.expect(TokenType.LBRACE, "Esperado '{' para abrir o bloco do 'else'.")
             bloco_else = self.bloco()
             
-        return Se(cond, bloco_if, bloco_else)
+        return Se(cond, bloco_if, bloco_else, t_if.line, t_if.column)
 
     def enquanto(self):
+        t_while = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'while'.")
-        cond = self.condicao()
+        cond = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a condição.")
         self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'while'.")
         bloco = self.bloco()
-        return Enquanto(cond, bloco)
+        return Enquanto(cond, bloco, t_while.line, t_while.column)
 
     def para(self):
+        t_for = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'for'.")
         
         inicializacao = self.atribuicao()
-        
-        condicao = self.condicao()
+        condicao = self.expressao()
         self.expect(TokenType.SEMICOLON, "Esperado ';' após a condição do 'for'.")
         
-        nome_inc = self.expect(TokenType.IDENT, "Esperado nome de variável no incremento do 'for'.").lexeme
+        inc_var = self.expect(TokenType.IDENT, "Esperado variável no incremento do 'for'.")
         self.expect(TokenType.ASSIGN, "Esperado '=' no incremento do 'for'.")
         expr_inc = self.expressao()
-        incremento = Atribuicao(nome_inc, expr_inc)
+        incremento = Atribuicao(inc_var.lexeme, expr_inc, inc_var.line, inc_var.column)
         
         self.expect(TokenType.RPAREN, "Esperado ')' fechando o 'for'.")
         self.expect(TokenType.LBRACE, "Esperado '{' para iniciar o bloco do 'for'.")
         bloco_for = self.bloco()
         
-        return Para(inicializacao, condicao, incremento, bloco_for)
+        return Para(inicializacao, condicao, incremento, bloco_for, t_for.line, t_for.column)
 
     def declaracao(self):
-        nome = self.expect(TokenType.IDENT, "Esperado nome da variável após 'int'.").lexeme
+        tipo = self.previous().lexeme
+        var = self.expect(TokenType.IDENT, f"Esperado nome da variável após '{tipo}'.")
         self.expect(TokenType.SEMICOLON, "Esperado ';' após declaração.")
-        return Declaracao(nome)
+        return Declaracao(tipo, var.lexeme, var.line, var.column)
 
     def saida(self):
+        t_print = self.previous()
         self.expect(TokenType.LPAREN, "Esperado '(' após 'print'.")
         expr = self.expressao()
         self.expect(TokenType.RPAREN, "Esperado ')' após a expressão.")
-        self.expect(TokenType.SEMICOLON, "Esperado ';' no final do comando print.")
-        return Saida(expr)
+        self.expect(TokenType.SEMICOLON, "Esperado ';' no final do print.")
+        return Saida(expr, t_print.line, t_print.column)
 
     def atribuicao(self):
-        nome = self.expect(TokenType.IDENT, "Comando inválido ou esperado nome de variável.").lexeme
+        var = self.expect(TokenType.IDENT, "Comando inválido ou esperado nome de variável.")
         self.expect(TokenType.ASSIGN, "Esperado '=' na atribuição.")
         expr = self.expressao()
         self.expect(TokenType.SEMICOLON, "Esperado ';' após atribuição.")
-        return Atribuicao(nome, expr)
+        return Atribuicao(var.lexeme, expr, var.line, var.column)
 
     def expressao(self):
+        return self.igualdade()
+
+    def igualdade(self):
+        expr = self.comparacao()
+        while self.match(TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL):
+            op = self.previous()
+            dir = self.comparacao()
+            expr = Binaria(op.lexeme, expr, dir, op.line, op.column)
+        return expr
+
+    def comparacao(self):
+        expr = self.soma()
+        while self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER):
+            op = self.previous()
+            dir = self.soma()
+            expr = Binaria(op.lexeme, expr, dir, op.line, op.column)
+        return expr
+    
+    def soma(self):
         expr = self.termo()
         while self.match(TokenType.PLUS, TokenType.MINUS):
-            operador = self.previous().lexeme
+            operador = self.previous()
             direita = self.termo()
-            expr = Binaria(operador, expr, direita)
+            expr = Binaria(operador.lexeme, expr, direita, operador.line, operador.column)
         return expr
 
     def termo(self):
         expr = self.fator()
         while self.match(TokenType.STAR, TokenType.SLASH):
-            operador = self.previous().lexeme
+            operador = self.previous()
             direita = self.fator()
-            expr = Binaria(operador, expr, direita)
+            expr = Binaria(operador.lexeme, expr, direita, operador.line, operador.column)
         return expr
 
     def fator(self):
         if self.match(TokenType.INT_LITERAL):
-            return Inteiro(int(self.previous().lexeme))
+            t = self.previous()
+            return Inteiro(int(t.lexeme), t.line, t.column)
+        if self.match(TokenType.KW_TRUE):
+            t = self.previous()
+            return Booleano(True, t.line, t.column)
+        if self.match(TokenType.KW_FALSE):
+            t = self.previous()
+            return Booleano(True, t.line, t.column)
         if self.match(TokenType.IDENT):
-            return Variavel(self.previous().lexeme)
+            t = self.previous()
+            return Variavel(t.lexeme, t.line, t.column)
         if self.match(TokenType.LPAREN):
             expr = self.expressao()
             self.expect(TokenType.RPAREN, "Esperado ')' fechando a expressão.")
             return expr
-        raise ParseError(self.peek(), "Expressão inválida. Esperado número, variável ou '('.")
+        raise ParseError(self.peek(), "Expressão inválida. Esperado número, booleano, variável ou '('.")
