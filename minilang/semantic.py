@@ -142,6 +142,14 @@ class AnalisadorSemantico:
                 expr.tipo_inferido = "<erro>"
                 return "<erro>"
 
+            if op in ("&&", "||"):
+                if esq == "bool" and dir == "bool":
+                    expr.tipo_inferido = "bool"
+                    return "bool"
+                self.add_erro(expr.line, expr.column, f"Operador lógico '{op}' só aceita bool, recebeu {esq} e {dir}.")
+                expr.tipo_inferido = "<erro>"
+                return "<erro>"
+
         return "<erro>"
 
     def imprimir_tabelas_simbolos(self):
