@@ -1,0 +1,12 @@
+int a;
+a = 1;
+
+{
+    int b;
+    b = a + 2;
+    int b;
+}
+
+print(b);
+b = 10;
+a = c + 1;

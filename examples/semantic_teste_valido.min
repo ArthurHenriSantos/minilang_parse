@@ -1,0 +1,22 @@
+int x;
+bool ativo;
+x = 10;
+ativo = true;
+
+if (x >= 5) {
+    int x;
+    x = 99;
+    print(x);
+} else {
+    ativo = false;
+}
+
+int i;
+for (i = 0; i < 3; i = i + 1) {
+    x = x + i;
+}
+
+while (ativo == true) {
+    print(x);
+    ativo = false;
+}

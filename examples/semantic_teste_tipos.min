@@ -1,0 +1,18 @@
+int n;
+bool ok;
+n = 10;
+ok = false;
+
+n = ok;
+ok = n + 1;
+n = n + ok;
+ok = n < ok;
+ok = n == ok;
+
+if (n) {
+    print(n);
+}
+
+while (n + 5) {
+    print(ok);
+}
