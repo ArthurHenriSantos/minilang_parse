@@ -139,19 +139,19 @@ class Parser:
         return Atribuicao(var.lexeme, expr, var.line, var.column)
 
     def expressao(self):
-        return self.e()
+        return self.ou()
 
-    def e(self):
-        expr = self.ou()
-        while self.match(TokenType.AND):
+    def ou(self):
+        expr = self.e()
+        while self.match(TokenType.OR):
             op = self.previous()
-            dir = self.ou()
+            dir = self.e()
             expr = Binaria(op.lexeme, expr, dir, op.line, op.column)
         return expr
 
-    def ou(self):
+    def e(self):
         expr = self.igualdade()
-        while self.match(TokenType.OR):
+        while self.match(TokenType.AND):
             op = self.previous()
             dir = self.igualdade()
             expr = Binaria(op.lexeme, expr, dir, op.line, op.column)
