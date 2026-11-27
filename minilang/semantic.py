@@ -146,13 +146,9 @@ class AnalisadorSemantico:
 
     def imprimir_tabelas_simbolos(self):
         for esc in self.escopos:
-            if esc["pai"]:
-                print(f"\nEscopo: {esc['nome']} (pai: {esc['pai']})")
-            else:
-                print(f"\nEscopo: {esc['nome']}")
-
+            print(f"\n[{esc['nome']}]")
             if len(esc["vars"]) == 0:
                 print("  (vazio)")
             else:
                 for s in esc["vars"].values():
-                    print(f"  {s.nome} : {s.tipo} (Linha {s.linha}, Col {s.coluna})")
+                    print(f"  {s.nome}: {s.tipo} (L{s.linha}:C{s.coluna})")
