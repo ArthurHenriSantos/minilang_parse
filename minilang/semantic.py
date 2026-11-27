@@ -62,7 +62,7 @@ class AnalisadorSemantico:
                 no.tipo_inferido = "<erro>"
             else:
                 no.tipo_inferido = s.tipo
-                if s.tipo != tipo_val:
+                if tipo_val != "<erro>" and s.tipo != tipo_val:
                     self.add_erro(no.line, no.column, f"Tipo incompatível em '{no.nome}': esperado {s.tipo}, veio {tipo_val}.")
 
         elif isinstance(no, Saida):
