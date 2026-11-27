@@ -24,6 +24,8 @@ class TokenType(Enum):
     LESS_EQUAL = "LESS_EQUAL"
     GREATER = "GREATER"
     GREATER_EQUAL = "GREATER_EQUAL"
+    AND = "AND"
+    OR = "OR"
     LPAREN = "LPAREN"
     RPAREN = "RPAREN"
     SEMICOLON = "SEMICOLON"
@@ -129,6 +131,12 @@ class Lexer:
             elif c == '!':
                 if self.match('='): self.add_token(start, TokenType.BANG_EQUAL)
                 else: self.diagnostics.append(Diagnostic(self.start_line, self.start_column, f"Símbolo inválido '{c}'"))
+            elif c == '&':
+                if self.match('&'): self.add_token(start, TokenType.AND)
+                else: self.diagnostics.append(Diagnostic(self.start_line, self.start_column, "Esperado '&&' para operador lógico."))
+            elif c == '|':
+                if self.match('|'): self.add_token(start, TokenType.OR)
+                else: self.diagnostics.append(Diagnostic(self.start_line, self.start_column, "Esperado '||' para operador lógico."))
             elif c == '<':
                 self.add_token(start, TokenType.LESS_EQUAL if self.match('=') else TokenType.LESS)
             elif c == '>':
