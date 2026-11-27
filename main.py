@@ -32,14 +32,14 @@ def main():
         print(res)
         return
 
-    print("\n--- AST Anotada ---")
-    imprimir_ast(res)
-
     sem = AnalisadorSemantico()
     sem.analisar(res)
 
     print("\n--- Tabelas de Símbolos ---")
     sem.imprimir_tabelas_simbolos()
+
+    print("\n--- AST Anotada ---")
+    imprimir_ast(res)
 
     print("\n--- Diagnósticos Semânticos ---")
     if len(sem.diagnosticos) == 0:
