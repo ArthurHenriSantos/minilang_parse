@@ -76,13 +76,10 @@ class Para(ASTNode):
         self.incremento = incremento
         self.bloco = bloco
 
-def _fmt_vinculo(simbolo):
+def _ref(simbolo):
     if simbolo is None:
-        return "vínculo: <não declarada>"
-    return f"vínculo: {simbolo.nome}@{simbolo.escopo} (L{simbolo.linha}:C{simbolo.coluna})"
-
-def _fmt_tipo(tipo):
-    return f"tipo: {tipo}" if tipo else ""
+        return "não declarada"
+    return f"decl L{simbolo.linha}:C{simbolo.coluna}"
 
 def imprimir_ast(node, nivel=0):
     indent = "  " * nivel
@@ -91,48 +88,43 @@ def imprimir_ast(node, nivel=0):
         for cmd in node.comandos:
             imprimir_ast(cmd, nivel + 1)
     elif isinstance(node, Declaracao):
-        print(f"{indent}Declaracao({node.tipo} {node.nome}) [L{node.line}:C{node.column}]")
+        print(f"{indent}Decl {node.tipo} {node.nome} (L{node.line}:C{node.column})")
     elif isinstance(node, Atribuicao):
-        print(f"{indent}Atribuicao({node.nome}) [{_fmt_vinculo(node.simbolo)} | {_fmt_tipo(node.tipo_inferido)}]")
+        print(f"{indent}Atrib {node.nome} ({_ref(node.simbolo)}) : {node.tipo_inferido}")
         imprimir_ast(node.expressao, nivel + 1)
     elif isinstance(node, Saida):
-        print(f"{indent}Saida [L{node.line}:C{node.column}]")
+        print(f"{indent}Print")
         imprimir_ast(node.expressao, nivel + 1)
     elif isinstance(node, Binaria):
-        print(f"{indent}Binaria({node.operador}) [{_fmt_tipo(node.tipo_inferido)}]")
+        print(f"{indent}Op({node.operador}) : {node.tipo_inferido}")
         imprimir_ast(node.esquerda, nivel + 1)
         imprimir_ast(node.direita, nivel + 1)
     elif isinstance(node, Inteiro):
-        print(f"{indent}Inteiro({node.valor}) [{_fmt_tipo(node.tipo_inferido)}]")
+        print(f"{indent}Int({node.valor}) : {node.tipo_inferido}")
     elif isinstance(node, Booleano):
-        print(f"{indent}Booleano({str(node.valor).lower()}) [{_fmt_tipo(node.tipo_inferido)}]")
+        print(f"{indent}Bool({str(node.valor).lower()}) : {node.tipo_inferido}")
     elif isinstance(node, Variavel):
-        print(f"{indent}Variavel({node.nome}) [{_fmt_vinculo(node.simbolo)} | {_fmt_tipo(node.tipo_inferido)}]")
+        print(f"{indent}Var({node.nome} -> {_ref(node.simbolo)}) : {node.tipo_inferido}")
     elif isinstance(node, Bloco):
-        nome = f" ({node.escopo_nome})" if node.escopo_nome else ""
-        print(f"{indent}Bloco{nome} [L{node.line}:C{node.column}]")
+        print(f"{indent}{node.escopo_nome or 'Bloco'}")
         if not node.comandos:
             print(f"{indent}  (vazio)")
         for cmd in node.comandos:
             imprimir_ast(cmd, nivel + 1)
     elif isinstance(node, Se):
-        print(f"{indent}Se [L{node.line}:C{node.column}]")
+        print(f"{indent}If")
         imprimir_ast(node.condicao, nivel + 1)
         imprimir_ast(node.bloco_if, nivel + 1)
         if node.bloco_else:
-            print(f"{indent}Senao")
+            print(f"{indent}Else")
             imprimir_ast(node.bloco_else, nivel + 1)
     elif isinstance(node, Enquanto):
-        print(f"{indent}Enquanto [L{node.line}:C{node.column}]")
+        print(f"{indent}While")
         imprimir_ast(node.condicao, nivel + 1)
         imprimir_ast(node.bloco, nivel + 1)
     elif isinstance(node, Para):
-        print(f"{indent}Para [L{node.line}:C{node.column}]")
-        print(f"{indent}  Inicializacao:")
-        imprimir_ast(node.inicializacao, nivel + 2)
-        print(f"{indent}  Condicao:")
-        imprimir_ast(node.condicao, nivel + 2)
-        print(f"{indent}  Incremento:")
-        imprimir_ast(node.incremento, nivel + 2)
-        print(f"{indent}  Bloco:")
-        imprimir_ast(node.bloco, nivel + 2)
+        print(f"{indent}For")
+        imprimir_ast(node.inicializacao, nivel + 1)
+        imprimir_ast(node.condicao, nivel + 1)
+        imprimir_ast(node.incremento, nivel + 1)
+        imprimir_ast(node.bloco, nivel + 1)
