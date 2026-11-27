@@ -182,7 +182,7 @@ class Parser:
             return Booleano(True, t.line, t.column)
         if self.match(TokenType.KW_FALSE):
             t = self.previous()
-            return Booleano(True, t.line, t.column)
+            return Booleano(False, t.line, t.column)
         if self.match(TokenType.IDENT):
             t = self.previous()
             return Variavel(t.lexeme, t.line, t.column)
