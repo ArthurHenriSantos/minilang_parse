@@ -151,7 +151,7 @@ class Parser:
 
     def comparacao(self):
         expr = self.soma()
-        while self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER):
+        while self.match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL):
             op = self.previous()
             dir = self.soma()
             expr = Binaria(op.lexeme, expr, dir, op.line, op.column)
